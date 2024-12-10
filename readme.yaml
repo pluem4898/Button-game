@@ -1,0 +1,60 @@
+name: Random Button Click Game
+version: 1.0.0
+description: >
+  A competitive button-clicking game for two players. Players compete to click their buttons as much as possible within a given time. The player with the highest score wins.
+
+authors:
+  - name: Phattaramatee Khumsanpan
+    email: pluem4898@gmail.com
+
+dependencies:
+  - name: node
+    version: ">=14.0.0"
+  - name: npm
+    version: ">=6.0.0"
+  - packages:
+      - express: "^4.18.2"
+      - socket.io: "^4.5.1"
+
+scripts:
+  setup:
+    description: Install all dependencies for the project.
+    command: |
+      npm install
+  start:
+    description: Run the server.
+    command: |
+      node server.js
+
+environment:
+  - NODE_ENV: development
+  - PORT: 3000
+
+project-structure:
+  - public/
+    - index.html: Main game page
+    - style.css: Game styles
+    - script.js: Client-side game logic
+  - server.js: Node.js server
+  - package.json: Dependency and npm script information
+  - README.md: Project description and setup guide
+
+instructions:
+  setup:
+    - Install Node.js and npm from [Node.js official website](https://nodejs.org/).
+    - Clone the repository using `git clone https://github.com/pluem4898/Button-game.git`.
+    - Navigate to the project directory: `cd button-game`.
+    - Install dependencies: `npm install`.
+
+  run:
+    - Start the server: `node server.js`.
+    - Open the browser and navigate to `http://localhost:3000`.
+
+troubleshooting:
+  - Ensure Node.js and npm are installed by running `node -v` and `npm -v`.
+  - Verify that port 3000 is not in use by another application.
+  - Check for missing or incorrect dependencies and reinstall them using `npm install`.
+
+license:
+  type: MIT
+  details: See LICENSE file for more details.
