@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Random Button Click Game</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    button {
+      font-size: 20px;
+      padding: 15px 30px;
+      position: absolute;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+    }
+    #redButton {
+      background-color: red;
+      color: white;
+    }
+    #blueButton {
+      background-color: blue;
+      color: white;
+    }
+    #startButton {
+      font-size: 24px;
+      padding: 20px 40px;
+      background-color: green;
+      color: white;
+      cursor: pointer;
+      border: none;
+      border-radius: 15px;
+      z-index: 1;
+    }
+    #timer, #scores {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+    #resultOverlay {
+      display: none; /* ซ่อน overlay ตอนเริ่มต้น */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200vh;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8); /* สีดำโปร่งใส */
+      color: white;
+      z-index: 20;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+
+
+    #resultOverlay h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    #resultOverlay h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    #resultOverlay p {
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Click Your Button!</h1>
+  <button id="startButton">Start Game</button>
+  <div id="timer" style="display: none;">Time Left: <span id="time">10</span> seconds</div>
+  <div id="scores"></div>
+  <div class="container" id="gameContainer"></div>
+
+  <!-- Overlay สำหรับแสดงผล -->
+  <div id="resultOverlay">
+    <h1 id="resultMessage"></h1>
+    <h2 id="scoreSummary"></h2>
+    <p id="returnCountdown">Returning to start in <span id="countdown">5</span> seconds...</p>
+  </div>  
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const startButton = document.getElementById('startButton');
+    const timerDiv = document.getElementById('timer');
+    const gameContainer = document.getElementById('gameContainer');
+    const resultOverlay = document.getElementById('resultOverlay');
+    const resultMessage = document.getElementById('resultMessage');
+    const scoreSummary = document.getElementById('scoreSummary');
+    const countdownElement = document.getElementById('countdown');
+    let scores = { red: 0, blue: 0 };
+    let timeLeft = 10;
+
+    // รอยืนยันจากทั้งสองฝ่าย
+    startButton.addEventListener('click', () => {
+      socket.emit('playerReady');
+      startButton.disabled = true;
+      startButton.textContent = "Waiting for other player...";
+    });
+
+    socket.on('gameStart', () => {
+      resultOverlay.style.display = 'none'; // ซ่อน overlay หากยังแสดงอยู่
+      timerDiv.style.display = 'block'; // แสดงตัวจับเวลา
+      startButton.style.display = 'none'; // ซ่อนปุ่มเริ่มเกม
+      startCountdown(); // เริ่มนับถอยหลัง
+    });
+
+
+    function createButtons(positions) {
+      gameContainer.innerHTML = ''; // ลบปุ่มเก่าทั้งหมด
+      createButton('Red Player', 'redButton', positions.red);
+      createButton('Blue Player', 'blueButton', positions.blue);
+    }
+
+    function createButton(text, id, position) {
+      const button = document.createElement('button');
+      button.textContent = text;
+      button.id = id;
+      button.style.top = `${position.top}%`;
+      button.style.left = `${position.left}%`;
+      button.addEventListener('click', () => {
+        socket.emit('buttonClicked', id === 'redButton' ? 'red' : 'blue');
+      });
+      gameContainer.appendChild(button);
+    }
+
+    function startCountdown() {
+      timeLeft = 10;
+      document.getElementById('time').textContent = timeLeft;
+
+      const countdown = setInterval(() => {
+        timeLeft--;
+        document.getElementById('time').textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+          socket.emit('gameOver');
+        }
+      }, 1000);
+    }
+
+    socket.on('newPositions', createButtons);
+
+    socket.on('updateScores', (updatedScores) => {
+      scores = updatedScores;
+      document.getElementById('scores').innerHTML = `<p>Red Player: ${scores.red} | Blue Player: ${scores.blue}</p>`;
+    });
+
+    socket.on('gameResult', (winner) => {
+      resultOverlay.style.display = 'flex'; // แสดง overlay
+      resultMessage.textContent = winner !== `${winner} Wins!` ? `${winner} Wins!` : `${winner} Wins!`;
+      scoreSummary.textContent = `Final Scores: Red Player - ${scores.red}, Blue Player - ${scores.blue}`;
+
+      let resetCountdown = 5;
+      countdownElement.textContent = resetCountdown;
+
+      const resetTimer = setInterval(() => {
+        resetCountdown--;
+        countdownElement.textContent = resetCountdown;
+
+
+        if (resetCountdown <= 0) {
+          clearInterval(resetTimer);
+          resetGame(); // รีเซ็ตเกม
+        }
+      }, 1000);
+    });
+
+
+    function resetGame() {
+  resultOverlay.style.display = 'none'; // ซ่อน overlay
+  timerDiv.style.display = 'none'; // ซ่อนตัวจับเวลา
+  startButton.style.display = 'block'; // แสดงปุ่มเริ่มเกม
+  startButton.disabled = false;
+  startButton.textContent = "Start Game";
+  gameContainer.innerHTML = ''; // ล้างปุ่มในเกม
+  scores = { red: 0, blue: 0 }; // รีเซ็ตคะแนน
+  // รีเซ็ต UI
+  document.getElementById('scores').innerHTML = ''; // ลบคะแนน
+  timerDiv.style.display = 'none'; // ซ่อนตัวจับเวลา
+  startButton.style.display = 'block'; // แสดงปุ่มเริ่มเกมใหม่
+  startButton.disabled = false;
+  startButton.textContent = "Start Game"; // รีเซ็ตข้อความปุ่ม
+  gameContainer.innerHTML = ''; // ลบปุ่มในพื้นที่เกม
+  scores = { red: 0, blue: 0 }; // รีเซ็ตคะแนนผู้เล่น
+  timeLeft = 20; // รีเซ็ตเวลาเกม
+}
+
+  </script>
+</body>
+</html>
