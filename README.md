@@ -20,6 +20,15 @@ Download and install Node.js from the [official Node.js website](https://nodejs.
 ### 2. Clone and Setup the Project
 1. Clone or download this repository to your local machine:
    ```bash
-   git clone https://github.com/your-repo/random-button-click-game.git
+   git clone https://github.com/your-repo/random-button-click-game.git](https://github.com/pluem4898/Button-game
    cd Button-game
+
+2. istall nodejs
+   ```bash
+   npm install
+
+3. Run games
+   ```bash
+   node server.js
+
 
